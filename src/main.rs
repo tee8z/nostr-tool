@@ -131,7 +131,11 @@ fn main() -> Result<()> {
             sub_command_args,
         ),
         Commands::ListEvents(sub_command_args) => {
-            sub_commands::list_events::list_events(args.relays, sub_command_args)
+            sub_commands::list_events::list_events(
+                args.private_key,
+                args.relays, 
+                args.difficulty_target,
+                sub_command_args)
         }
         Commands::GenerateKeypair(sub_command_args) => {
             sub_commands::generate_keypair::get_new_keypair(sub_command_args)
