@@ -85,7 +85,7 @@ pub fn list_events(
         limit: sub_command_args.limit,
         custom: Map::new(),
     }];
-    if sub_command_args.alive.is_some() && sub_command_args.alive.unwrap() {
+   /* if sub_command_args.alive.is_some() && sub_command_args.alive.unwrap() {
         nostr_sdk::block_on(handle_subscription(
             &client,
             filters,
@@ -93,17 +93,18 @@ pub fn list_events(
             keys,
         ))
         .ok();
-    } else {
-        handle_single_request(&client, filters, sub_command_args).ok();
-    }
+    } else { */
+        handle_request(&client, filters, sub_command_args, keys).ok();
+    //}
 
     Ok(())
 }
 
-fn handle_single_request(
+fn handle_request(
     client: &blocking::Client,
     filters: Vec<Filter>,
     sub_command_args: &ListEventsSubCommand,
+    keys: Keys,
 ) -> Result<()> {
     let events: Vec<Event> = client.get_events_of(filters, None)?;
 
@@ -113,14 +114,12 @@ fn handle_single_request(
         println!("Wrote {} event(s) to {}", events.len(), output);
     } else {
         for (i, event) in events.iter().enumerate() {
-            if let Ok(e) = serde_json::to_string_pretty(event) {
-                println!("{i}: {e:#}")
-            }
+            handle_event(Some(i), event, keys.clone(), sub_command_args)?;
         }
     }
     Ok(())
 }
-
+/*
 async fn handle_subscription(
     client: &blocking::Client,
     filters: Vec<Filter>,
@@ -152,33 +151,48 @@ fn handle_notification(
     sub_command_args: &ListEventsSubCommand,
 ) -> Result<()> {
     if let RelayPoolNotification::Event(_url, event) = notification {
-        if event.kind == Kind::EncryptedDirectMessage {
-            match decrypt(&keys.secret_key()?, &event.pubkey, &event.content) {
-                Ok(msg) => {
-                    if !sub_command_args.hex {
-                        println!(
-                            "Message from {} event id: {}, content: {}",
-                            event.pubkey.to_bech32()?,
-                            event.id.to_bech32()?,
-                            msg
-                        );
-                    } else {
-                        println!(
-                            "Message from {} event id: {},  content: {}",
-                            event.pubkey,
-                            event.id.to_hex(),
-                            msg
-                        );
-                    }
+        handle_event(None, &event, keys, sub_command_args)?;
+    }
+    Ok(())
+}
+*/
+fn handle_event(
+    index: Option<usize>,
+    event: &Event,
+    keys: Keys,
+    sub_command_args: &ListEventsSubCommand,
+) -> Result<()> {
+    if event.kind == Kind::EncryptedDirectMessage {
+        match decrypt(&keys.secret_key()?, &event.pubkey, &event.content) {
+            Ok(msg) => {
+                if !sub_command_args.hex {
+                    println!(
+                        "Message from {} event id: {}, content: {}",
+                        event.pubkey.to_bech32()?,
+                        event.id.to_bech32()?,
+                        msg
+                    );
+                } else {
+                    println!(
+                        "Message from {} event id: {},  content: {}",
+                        event.pubkey,
+                        event.id.to_hex(),
+                        msg
+                    );
                 }
-                Err(e) => println!("Impossible to decrypt direct message: {e}"),
             }
-        } else {
-            if let Some(output) = &sub_command_args.output {
-                let file = OpenOptions::new().create(true).append(true).open(output)?;
-                serde_json::to_writer_pretty(file, &event).unwrap();
-            }
-            if let Ok(e) = serde_json::to_string_pretty(&event) {
+            Err(e) => println!("Impossible to decrypt direct message: {e}"),
+        }
+    } else {
+        if let Some(output) = &sub_command_args.output {
+            let file = OpenOptions::new().create(true).append(true).open(output)?;
+            serde_json::to_writer_pretty(file, &event).unwrap();
+        }
+        if let Ok(e) = serde_json::to_string_pretty(&event) {
+            if index.is_some() {
+                let i = index.unwrap();
+                println!("{i}: {e:#}")
+            } else {
                 println!("{e:#}")
             }
         }
