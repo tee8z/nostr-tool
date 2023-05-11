@@ -36,8 +36,6 @@ enum Commands {
     PublishContactListCsv(sub_commands::publish_contactlist_csv::PublishContactListCsvSubCommand),
     /// Send a direct message
     SendDirectMessage(sub_commands::dm::SendDirectMessageSubCommand),
-    /// Read direct messages from relay
-    ReadDirectMessage(sub_commands::dm::ReadDirectMessageSubCommand),
     /// Delete an event
     DeleteEvent(sub_commands::delete_event::DeleteEventSubCommand),
     /// React to an event
@@ -112,12 +110,6 @@ fn main() -> Result<()> {
             args.difficulty_target,
             sub_command_args,
         ),
-        Commands::ReadDirectMessage(sub_command_args) => sub_commands::dm::read(
-            args.private_key,
-            args.relays,
-            args.difficulty_target,
-            sub_command_args
-        ),
         Commands::DeleteEvent(sub_command_args) => sub_commands::delete_event::delete(
             args.private_key,
             args.relays,
@@ -130,13 +122,12 @@ fn main() -> Result<()> {
             args.difficulty_target,
             sub_command_args,
         ),
-        Commands::ListEvents(sub_command_args) => {
-            sub_commands::list_events::list_events(
-                args.private_key,
-                args.relays, 
-                args.difficulty_target,
-                sub_command_args)
-        }
+        Commands::ListEvents(sub_command_args) => sub_commands::list_events::list_events(
+            args.private_key,
+            args.relays,
+            args.difficulty_target,
+            sub_command_args,
+        ),
         Commands::GenerateKeypair(sub_command_args) => {
             sub_commands::generate_keypair::get_new_keypair(sub_command_args)
         }
